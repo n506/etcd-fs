@@ -31,6 +31,11 @@ Clone the project and build it.
 make build
 ```
 
+Or using official docker golang container
+```bash
+docker run --rm -it -v $(pwd):/go/src -w /go/src golang:1.6-wheezy make build
+```
+
 This generates an executable file ```etcd-fs```. You can mount etcd as a filesystem by running ```etcd-fs MOUNT_PATH ETCD_ENDPOINT```. For example:
 
 ```bash
