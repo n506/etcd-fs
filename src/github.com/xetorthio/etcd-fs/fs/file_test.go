@@ -1,7 +1,7 @@
 package etcdfs
 
 import (
-	etcdm "github.com/coreos/go-etcd/etcd"
+	etcdm "github.com/coreos/etcd/client"
 	. "github.com/franela/goblin"
 	"testing"
 	//  "fmt"

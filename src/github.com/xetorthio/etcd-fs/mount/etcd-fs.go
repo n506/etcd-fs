@@ -8,6 +8,7 @@ import (
 	"github.com/xetorthio/etcd-fs/fs"
 	"log"
 	"os"
+        "github.com/coreos/etcd/client"
 )
 
 func main() {
@@ -20,7 +21,7 @@ func main() {
 	}
 	etcdFs := etcdfs.EtcdFs{
 		FileSystem:   pathfs.NewDefaultFileSystem(),
-		EtcdEndpoint: flag.Arg(1),
+		EtcdEndpointCfg: client.Config{Endpoints: []flag.Arg(1), Transport: client.DefaultTransport, HeaderTimeoutPerRequest: time.Second, }
 	}
 	nfs := pathfs.NewPathNodeFs(&etcdFs, nil)
 	server, _, err := nodefs.MountRoot(flag.Arg(0), nfs.Root(), nil)

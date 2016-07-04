@@ -2,7 +2,7 @@ package etcdfs
 
 import (
 	"bytes"
-	"github.com/coreos/go-etcd/etcd"
+	"github.com/coreos/etcd/client"
 	"github.com/hanwen/go-fuse/fuse"
 	"github.com/hanwen/go-fuse/fuse/nodefs"
 	"log"
@@ -10,11 +10,11 @@ import (
 )
 
 type etcdFile struct {
-	etcdClient *etcd.Client
+	etcdClient client.Client
 	path       string
 }
 
-func NewEtcdFile(client *etcd.Client, path string) nodefs.File {
+func NewEtcdFile(client *client.Client, path string) nodefs.File {
 	file := new(etcdFile)
 	file.etcdClient = client
 	file.path = path

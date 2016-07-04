@@ -8,16 +8,17 @@ import (
 	"github.com/hanwen/go-fuse/fuse/nodefs"
 	"github.com/hanwen/go-fuse/fuse/pathfs"
 
-	"github.com/coreos/go-etcd/etcd"
+	"github.com/coreos/etcd/client"
 )
 
 type EtcdFs struct {
-	pathfs.FileSystem
-	EtcdEndpoint string
+        pathfs.FileSystem
+        EtcdEndpointCfg client.Config
 }
 
-func (me *EtcdFs) NewEtcdClient() *etcd.Client {
-	return etcd.NewClient([]string{me.EtcdEndpoint})
+func (me *EtcdFs) NewEtcdClient() client.Client {
+    c, err := client.New(me.EtcdEndpointCfg)
+    return c
 }
 
 func (me *EtcdFs) Unlink(name string, context *fuse.Context) (code fuse.Status) {
