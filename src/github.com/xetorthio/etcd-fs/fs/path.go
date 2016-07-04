@@ -11,13 +11,18 @@ import (
 	"github.com/coreos/go-etcd/etcd"
 )
 
+var gClient *etcd.Client
+
 type EtcdFs struct {
 	pathfs.FileSystem
 	EtcdEndpoint string
 }
 
 func (me *EtcdFs) NewEtcdClient() *etcd.Client {
-	return etcd.NewClient([]string{me.EtcdEndpoint})
+        if gClient == nil {
+            gClient = etcd.NewClient([]string{me.EtcdEndpoint})
+        }
+	return gClient
 }
 
 func (me *EtcdFs) Unlink(name string, context *fuse.Context) (code fuse.Status) {
