@@ -3,6 +3,7 @@ package etcdfs
 import (
 	"log"
 	"strings"
+	"sync"
 
 	"github.com/hanwen/go-fuse/fuse"
 	"github.com/hanwen/go-fuse/fuse/nodefs"
@@ -11,18 +12,22 @@ import (
 	"github.com/coreos/go-etcd/etcd"
 )
 
-var gClient *etcd.Client
-
 type EtcdFs struct {
 	pathfs.FileSystem
 	EtcdEndpoint string
+
+	connlock   sync.RWMutex
+	connection *etcd.Client
 }
 
 func (me *EtcdFs) NewEtcdClient() *etcd.Client {
-        if gClient == nil {
-            gClient = etcd.NewClient([]string{me.EtcdEndpoint})
-        }
-	return gClient
+	me.connlock.Lock()
+	defer me.connlock.Unlock()
+
+	if me.connection == nil {
+		me.connection = etcd.NewClient([]string{me.EtcdEndpoint})
+	}
+	return me.connection
 }
 
 func (me *EtcdFs) Unlink(name string, context *fuse.Context) (code fuse.Status) {

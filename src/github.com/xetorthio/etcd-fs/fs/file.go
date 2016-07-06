@@ -2,11 +2,12 @@ package etcdfs
 
 import (
 	"bytes"
+	"log"
+	"time"
+
 	"github.com/coreos/go-etcd/etcd"
 	"github.com/hanwen/go-fuse/fuse"
 	"github.com/hanwen/go-fuse/fuse/nodefs"
-	"log"
-	"time"
 )
 
 type etcdFile struct {
