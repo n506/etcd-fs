@@ -1,6 +1,7 @@
 package etcdfs
 
 import (
+        "bytes"
 	"log"
 	"strings"
 	"sync"
@@ -148,10 +149,13 @@ func (me *EtcdFs) Open(name string, flags uint32, context *fuse.Context) (file n
 	return NewEtcdFile(me.NewEtcdClient(), name), fuse.OK
 }
 
+// TODO: Error handling.
 func (me *EtcdFs) Rename(oldName string, newName string, context *fuse.Context) (code fuse.Status) {
-        etcdClient, err := me.NewEtcdClient()
-        content := etcdClient.Get(oldName, false, false)
-        _, err := etcdClient().Set(newName, content, 0)
-        _, err := etcdClient.Delete(oldName, false)
+  etcdClient := me.NewEtcdClient()
+  res,_ := etcdClient.Get(oldName, false, false)
+  originalValue := []byte(res.Node.Value)
+  newValue := bytes.NewBuffer(originalValue)
+  etcdClient.Set(newName, newValue.String(), 0)
+  etcdClient.Delete(oldName, false)
+  return fuse.OK
 }
-
