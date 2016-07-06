@@ -14,7 +14,7 @@ import (
 
 type EtcdFs struct {
 	pathfs.FileSystem
-	EtcdEndpoint string
+	EtcdEndpoint []string
 
 	connlock   sync.RWMutex
 	connection *etcd.Client
@@ -25,7 +25,7 @@ func (me *EtcdFs) NewEtcdClient() *etcd.Client {
 	defer me.connlock.Unlock()
 
 	if me.connection == nil {
-		me.connection = etcd.NewClient([]string{me.EtcdEndpoint})
+		me.connection = etcd.NewClient(me.EtcdEndpoint)
 	}
 	return me.connection
 }

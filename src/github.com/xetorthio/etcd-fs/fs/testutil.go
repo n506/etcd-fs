@@ -13,8 +13,8 @@ import (
 const (
 	testTtl          = 100 * time.Millisecond
 	testVerbose      = false
-	testEtcdEndpoint = "http://localhost:4001"
 )
+var testEtcdEndpoint = []string{"http://localhost:4001"}
 
 type testEtcdFsMount struct {
 	path  string
