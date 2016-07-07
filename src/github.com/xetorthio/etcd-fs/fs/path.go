@@ -5,6 +5,7 @@ import (
 	"log"
 	"strings"
 	"sync"
+        "time"
 
 	"github.com/hanwen/go-fuse/fuse"
 	"github.com/hanwen/go-fuse/fuse/nodefs"
@@ -29,6 +30,10 @@ func (me *EtcdFs) NewEtcdClient() *etcd.Client {
 		me.connection = etcd.NewClient(me.EtcdEndpoint)
 	}
 	return me.connection
+}
+
+func (me *EtcdFs) String() string {
+        return "etcd-fs"
 }
 
 func (me *EtcdFs) Unlink(name string, context *fuse.Context) (code fuse.Status) {
@@ -169,4 +174,76 @@ func (me *EtcdFs) Rename(oldName string, newName string, context *fuse.Context) 
         }
 
         return fuse.OK
+}
+
+func (me *EtcdFs) Access(name string, mode uint32, context *fuse.Context) (code fuse.Status) {
+        etcdClient := me.NewEtcdClient()
+        _, err := etcdClient.Get(name, false, false)
+        if err != nil {
+            log.Println(err)
+            return fuse.ENOENT
+        }
+        return fuse.OK
+}
+
+func (me *EtcdFs) Link(oldName string, newName string, context *fuse.Context) (code fuse.Status) {
+        return fuse.ENOSYS
+}
+
+func (me *EtcdFs) Symlink(name string, linkName string, context *fuse.Context) (fuse.Status) {
+        return fuse.ENOSYS
+}
+
+func (me *EtcdFs) Readlink(name string, context *fuse.Context) (string, fuse.Status) {
+        return "", fuse.ENOSYS
+}
+
+func (me *EtcdFs) Mknod(name string, mode uint32, dev uint32, context *fuse.Context) fuse.Status {
+        return fuse.ENOSYS
+}
+
+func (me *EtcdFs) Utimens(name string, atime *time.Time, mtime *time.Time, context *fuse.Context) (code fuse.Status) {
+        return fuse.OK
+}
+
+func (me *EtcdFs) Chmod(name string, perms uint32, context *fuse.Context) (code fuse.Status) {
+        return fuse.OK
+}
+
+func (me *EtcdFs) Chown(name string, uid uint32, gid uint32, context *fuse.Context) (code fuse.Status) {
+        return fuse.OK
+}
+
+func (me *EtcdFs) Truncate(name string, size uint64, context *fuse.Context) (code fuse.Status) {
+        etcdClient := me.NewEtcdClient()
+
+        _, err := etcdClient.Get(name, false, false)
+
+        if err != nil {
+            log.Println(err)
+            return fuse.EIO
+        }
+        if _, err := etcdClient.Set(name, "", 0); err != nil {
+            log.Println(err)
+            return fuse.EIO
+        }
+        return fuse.OK
+}
+
+func (me *EtcdFs) GetXAttr(name string, attribute string, context *fuse.Context) (data []byte, code fuse.Status) {
+        r := []byte{}
+        return r, fuse.ENOSYS
+}
+
+func (me *EtcdFs) RemoveXAttr(name string, attr string, context *fuse.Context) fuse.Status {
+        return fuse.ENOSYS
+}
+
+func (me *EtcdFs) SetXAttr(name string, attr string,data []byte, flags int, context *fuse.Context) fuse.Status {
+        return fuse.ENOSYS
+}
+
+func (me *EtcdFs) ListXAttr(name string, context *fuse.Context) (attrs []string, code fuse.Status) {
+        r := []string{}
+        return r, fuse.ENOSYS
 }

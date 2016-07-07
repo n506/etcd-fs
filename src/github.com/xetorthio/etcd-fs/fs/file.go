@@ -24,6 +24,7 @@ func NewEtcdFile(client *etcd.Client, path string) nodefs.File {
 
 func (f *etcdFile) SetInode(*nodefs.Inode) {
 }
+
 func (f *etcdFile) InnerFile() nodefs.File {
 	return nil
 }
@@ -107,19 +108,29 @@ func (f *etcdFile) Fsync(flags int) (code fuse.Status) {
 }
 
 func (f *etcdFile) Utimens(atime *time.Time, mtime *time.Time) fuse.Status {
-	return fuse.ENOSYS
-}
-
-func (f *etcdFile) Truncate(size uint64) fuse.Status {
 	return fuse.OK
 }
 
+func (f *etcdFile) Truncate(size uint64) fuse.Status {
+        res, err := f.etcdClient.Get(f.path, false, false)
+
+        if err != nil {
+            log.Println(err)
+            return fuse.EIO
+        }
+        if _, err := f.etcdClient.Set(res.Node.Value, "", 0); err != nil {
+            log.Println(err)
+            return fuse.EIO
+        }
+        return fuse.OK
+}
+
 func (f *etcdFile) Chown(uid uint32, gid uint32) fuse.Status {
-	return fuse.ENOSYS
+	return fuse.OK
 }
 
 func (f *etcdFile) Chmod(perms uint32) fuse.Status {
-	return fuse.ENOSYS
+	return fuse.OK
 }
 
 func (f *etcdFile) Allocate(off uint64, size uint64, mode uint32) (code fuse.Status) {
