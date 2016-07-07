@@ -17,6 +17,7 @@ import (
 type EtcdFs struct {
 	pathfs.FileSystem
 	EtcdEndpoint []string
+        Verbose bool
 
 	connlock   sync.RWMutex
 	connection *etcd.Client
