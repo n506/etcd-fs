@@ -149,13 +149,24 @@ func (me *EtcdFs) Open(name string, flags uint32, context *fuse.Context) (file n
 	return NewEtcdFile(me.NewEtcdClient(), name), fuse.OK
 }
 
-// TODO: Error handling.
 func (me *EtcdFs) Rename(oldName string, newName string, context *fuse.Context) (code fuse.Status) {
-  etcdClient := me.NewEtcdClient()
-  res,_ := etcdClient.Get(oldName, false, false)
-  originalValue := []byte(res.Node.Value)
-  newValue := bytes.NewBuffer(originalValue)
-  etcdClient.Set(newName, newValue.String(), 0)
-  etcdClient.Delete(oldName, false)
-  return fuse.OK
+        etcdClient := me.NewEtcdClient()
+        res, err := etcdClient.Get(oldName, false, false)
+        if err != nil {
+            log.Println(err)
+            return fuse.ENOENT
+        }
+        originalValue := []byte(res.Node.Value)
+        newValue := bytes.NewBuffer(originalValue)
+        if _, err :=etcdClient.Set(newName, newValue.String(), 0); err != nil {
+            log.Println(err)
+            return fuse.ENOENT
+        }
+        if _, err := etcdClient.Delete(oldName, false); err != nil {
+            log.Println(err)
+            etcdClient.Delete(newName, false)
+            return fuse.ENOENT
+        }
+
+        return fuse.OK
 }
