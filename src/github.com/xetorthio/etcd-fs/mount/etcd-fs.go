@@ -23,7 +23,7 @@ func main() {
 	}
         endpoints := strings.FieldsFunc(flag.Arg(1), func(c rune) bool { return c == ',' })
         log.Printf("ETCD endpoints: %v\n", endpoints)
-        log.Printf("Muntpoint: %v\n", flag.Arg(0))
+        log.Printf("Mountpoint: %v\n", flag.Arg(0))
 	etcdFs := etcdfs.EtcdFs{
 		FileSystem:   pathfs.NewDefaultFileSystem(),
 		EtcdEndpoint: endpoints,
