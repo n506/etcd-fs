@@ -4,6 +4,7 @@ test:
 	go get github.com/franela/goblin
 	go get github.com/coreos/go-etcd/etcd
 	go get github.com/hanwen/go-fuse/fuse
+	go get github.com/jessevdk/go-flags
 	go test -v etcdfs
 
 install:
@@ -14,4 +15,5 @@ build:
 	go get github.com/franela/goblin
 	go get github.com/coreos/go-etcd/etcd
 	go get github.com/hanwen/go-fuse/fuse
+	go get github.com/jessevdk/go-flags
 	go build src/github.com/xetorthio/etcd-fs/mount/etcd-fs.go
