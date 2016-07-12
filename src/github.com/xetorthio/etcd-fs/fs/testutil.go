@@ -1,68 +1,68 @@
 package etcdfs
 
 import (
-	"fmt"
-	"github.com/hanwen/go-fuse/fuse"
-	"github.com/hanwen/go-fuse/fuse/nodefs"
-	"github.com/hanwen/go-fuse/fuse/pathfs"
-	"io/ioutil"
-	"os"
-	"time"
+    "fmt"
+    "github.com/hanwen/go-fuse/fuse"
+    "github.com/hanwen/go-fuse/fuse/nodefs"
+    "github.com/hanwen/go-fuse/fuse/pathfs"
+    "io/ioutil"
+    "os"
+    "time"
 )
 
 const (
-	testTtl          = 100 * time.Millisecond
-	testVerbose      = false
+    testTtl          = 100 * time.Millisecond
+    testVerbose      = false
 )
 var testEtcdEndpoint = []string{"http://localhost:4001"}
 
 type testEtcdFsMount struct {
-	path  string
-	state *fuse.Server
+    path  string
+    state *fuse.Server
 }
 
 func (me testEtcdFsMount) Path() string {
-	return me.path
+    return me.path
 }
 
 func (me testEtcdFsMount) Unmount() {
-	err := me.state.Unmount()
+    err := me.state.Unmount()
 
-	if err != nil {
-		fmt.Printf("Unmount failed: %f\n", err)
-	}
+    if err != nil {
+        fmt.Printf("Unmount failed: %f\n", err)
+    }
 
-	os.RemoveAll(me.path)
+    os.RemoveAll(me.path)
 }
 
 func NewTestEtcdFsMount() testEtcdFsMount {
-	t := testEtcdFsMount{}
+    t := testEtcdFsMount{}
 
-	var err error
-	t.path, err = ioutil.TempDir("", "etcd-fs")
+    var err error
+    t.path, err = ioutil.TempDir("", "etcd-fs")
 
-	if err != nil {
-		fmt.Printf("Temdir fail: %v\n", err)
-	}
+    if err != nil {
+        fmt.Printf("Temdir fail: %v\n", err)
+    }
 
-	etcdFs := EtcdFs{FileSystem: pathfs.NewDefaultFileSystem(), EtcdEndpoint: testEtcdEndpoint}
+    etcdFs := EtcdFs{FileSystem: pathfs.NewDefaultFileSystem(), EtcdEndpoint: testEtcdEndpoint}
 
-	nfs := pathfs.NewPathNodeFs(&etcdFs, nil)
+    nfs := pathfs.NewPathNodeFs(&etcdFs, nil)
 
-	connector := nodefs.NewFileSystemConnector(nfs.Root(), &nodefs.Options{EntryTimeout: testTtl, AttrTimeout: testTtl, NegativeTimeout: 0.0})
-	connector.SetDebug(testVerbose)
+    connector := nodefs.NewFileSystemConnector(nfs.Root(), &nodefs.Options{EntryTimeout: testTtl, AttrTimeout: testTtl, NegativeTimeout: 0.0})
+    connector.SetDebug(testVerbose)
 
-	t.state, err = fuse.NewServer(fuse.NewRawFileSystem(connector.RawFS()), t.path, &fuse.MountOptions{SingleThreaded: true})
-	if err != nil {
-		fmt.Println("NewServer:", err)
-	}
+    t.state, err = fuse.NewServer(fuse.NewRawFileSystem(connector.RawFS()), t.path, &fuse.MountOptions{SingleThreaded: true})
+    if err != nil {
+        fmt.Println("NewServer:", err)
+    }
 
-	t.state.SetDebug(testVerbose)
+    t.state.SetDebug(testVerbose)
 
-	// Unthreaded, but in background.
-	go t.state.Serve()
+    // Unthreaded, but in background.
+    go t.state.Serve()
 
-	t.state.WaitMount()
+    t.state.WaitMount()
 
-	return t
+    return t
 }
