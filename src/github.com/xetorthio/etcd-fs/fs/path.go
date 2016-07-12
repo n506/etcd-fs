@@ -44,7 +44,7 @@ func init() {
 }
 
 func (me *EtcdFs) logfuse(s string, i fuse.Status) fuse.Status {
-    if me.Verbose {log.Printf("%s: %i/%s", s, i, Status[i])}
+    if me.Verbose {log.Printf("%s: %v/%s", s, i, Status[i])}
     return i
 }
 

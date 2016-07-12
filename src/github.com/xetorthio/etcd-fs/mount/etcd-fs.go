@@ -15,7 +15,7 @@ import (
 
 type ConfigT struct {
     Verbose bool `short:"v" long:"verbose" description:"verbose debug output" env:"ETCD_FS_VERBOSE"`
-    End string `short:"e" long:"endpoint" description:"ETCD endpoints, comma separated" default:"http://localhost:2739" env:"ETCD_FS_ENDPOINT"`
+    End string `short:"e" long:"endpoint" description:"ETCD endpoints, comma separated" default:"http://localhost:2379" env:"ETCD_FS_ENDPOINT"`
     Mount string `short:"m" long:"mount" description:"mountpoint for fs, must be created.  REQUIRED" required:"true" env:"ETCD_FS_MOUNT"`
     Help bool `short:"h" long:"help" description:"Show this help message"`
 }
