@@ -4,7 +4,6 @@ import (
     etcdm "github.com/coreos/go-etcd/etcd"
     . "github.com/franela/goblin"
     "testing"
-    //  "fmt"
     "io/ioutil"
     "os"
 )
