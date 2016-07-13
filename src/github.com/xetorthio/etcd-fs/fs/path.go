@@ -62,7 +62,7 @@ func (me *EtcdFs) NewEtcdClient() *etcd.Client {
 }
 
 func (me *EtcdFs) String() string {
-    return "etcd-fs"
+    return "etcdfs"
 }
 
 func (me *EtcdFs) Unlink(name string, context *fuse.Context) fuse.Status {
