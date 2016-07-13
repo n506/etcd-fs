@@ -65,6 +65,10 @@ func (me *EtcdFs) String() string {
 }
 
 func (me *EtcdFs) Unlink(name string, context *fuse.Context) (code fuse.Status) {
+    if name == "" {
+        return me.logfuse("Unlink", fuse.ENOENT)
+    }
+
     me.lock.Lock()
     defer me.lock.Unlock()
 
@@ -85,6 +89,10 @@ func (me *EtcdFs) Unlink(name string, context *fuse.Context) (code fuse.Status) 
 }
 
 func (me *EtcdFs) Rmdir(name string, context *fuse.Context) (code fuse.Status) {
+    if name == "" {
+        return me.logfuse("Rmdir", fuse.ENOENT)
+    }
+
     me.lock.Lock()
     defer me.lock.Unlock()
     if me.Verbose {log.Printf("Rmdir: %v\n", name)}
@@ -104,6 +112,10 @@ func (me *EtcdFs) Rmdir(name string, context *fuse.Context) (code fuse.Status) {
 }
 
 func (me *EtcdFs) Create(name string, flags uint32, mode uint32, context *fuse.Context) (file nodefs.File, code fuse.Status) {
+    if name == "" {
+        return me.logfuse("Create", fuse.ENOENT)
+    }
+
     me.lock.Lock()
     defer me.lock.Unlock()
     if me.Verbose {log.Printf("Create: %v, %v, %v\n", name, flags, mode)}
@@ -119,6 +131,10 @@ func (me *EtcdFs) Create(name string, flags uint32, mode uint32, context *fuse.C
 }
 
 func (me *EtcdFs) Mkdir(name string, mode uint32, context *fuse.Context) fuse.Status {
+    if name == "" {
+        return me.logfuse("MkDir", fuse.ENOENT)
+    }
+
     me.lock.Lock()
     defer me.lock.Unlock()
     if me.Verbose {log.Printf("Mkdir: %v, %v\n", name, mode)}
@@ -170,6 +186,10 @@ func (me *EtcdFs) GetAttr(name string, context *fuse.Context) (*fuse.Attr, fuse.
 }
 
 func (me *EtcdFs) OpenDir(name string, context *fuse.Context) (c []fuse.DirEntry, code fuse.Status) {
+    if name == "" {
+        return me.logfuse("OpenDir", fuse.ENOENT)
+    }
+
     me.lock.RLock()
     defer me.lock.RUnlock()
     if me.Verbose {log.Printf("OpenDir: %v\n", name)}
@@ -197,6 +217,10 @@ func (me *EtcdFs) OpenDir(name string, context *fuse.Context) (c []fuse.DirEntry
 }
 
 func (me *EtcdFs) Open(name string, flags uint32, context *fuse.Context) (file nodefs.File, code fuse.Status) {
+    if name == "" {
+        return me.logfuse("Open", fuse.ENOENT)
+    }
+
     me.lock.RLock()
     defer me.lock.RUnlock()
     if me.Verbose {log.Printf("Open: %v, %v\n", name, flags)}
@@ -212,6 +236,9 @@ func (me *EtcdFs) Open(name string, flags uint32, context *fuse.Context) (file n
 }
 
 func (me *EtcdFs) Rename(oldName string, newName string, context *fuse.Context) (code fuse.Status) {
+    if oldName=="" || newName=="" {
+        return me.logfuse("Rename", fuse.ENOENT)
+    }
     me.lock.Lock()
     defer me.lock.Unlock()
     if me.Verbose {log.Printf("Rename: %v -> %v\n", oldName, newName)}
@@ -237,6 +264,10 @@ func (me *EtcdFs) Rename(oldName string, newName string, context *fuse.Context) 
 }
 
 func (me *EtcdFs) Access(name string, mode uint32, context *fuse.Context) (code fuse.Status) {
+    if name == "" {
+        return me.logfuse("Access", fuse.ENOENT)
+    }
+
     me.lock.RLock()
     defer me.lock.RUnlock()
     if me.Verbose {log.Printf("Access: %v, %v\n", name, mode)}
@@ -286,6 +317,9 @@ func (me *EtcdFs) Chown(name string, uid uint32, gid uint32, context *fuse.Conte
 }
 
 func (me *EtcdFs) Truncate(name string, size uint64, context *fuse.Context) (code fuse.Status) {
+    if name == "" {
+        return me.logfuse("Truncate", fuse.ENOENT)
+    }
     me.lock.Lock()
     defer me.lock.Unlock()
     if me.Verbose {log.Printf("Truncate: %v, %v\n", name, size)}
@@ -304,7 +338,7 @@ func (me *EtcdFs) Truncate(name string, size uint64, context *fuse.Context) (cod
 }
 
 func (me *EtcdFs) GetXAttr(name string, attribute string, context *fuse.Context) (data []byte, code fuse.Status) {
-    if me.Verbose {log.Printf("GetZAttr: %v, %v\n", name, attribute)}
+    if me.Verbose {log.Printf("GetXAttr: %v, %v\n", name, attribute)}
     r := []byte{}
     return r, me.logfuse("GetXAttr", fuse.ENOSYS)
 }
