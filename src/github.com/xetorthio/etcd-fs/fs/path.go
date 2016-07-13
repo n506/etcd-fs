@@ -20,6 +20,7 @@ type EtcdFs struct {
     Verbose           bool
     connlock          sync.Mutex
     connection        *etcd.Client
+    lock              sync.RWMutex
 }
 
 var Status map[fuse.Status]string
@@ -64,6 +65,9 @@ func (me *EtcdFs) String() string {
 }
 
 func (me *EtcdFs) Unlink(name string, context *fuse.Context) (code fuse.Status) {
+    me.lock.Lock()
+    defer me.lock.Unlock()
+
     if me.Verbose {log.Printf("Unlink: %v\n", name)}
 
     if name == "" {
@@ -81,6 +85,8 @@ func (me *EtcdFs) Unlink(name string, context *fuse.Context) (code fuse.Status) 
 }
 
 func (me *EtcdFs) Rmdir(name string, context *fuse.Context) (code fuse.Status) {
+    me.lock.Lock()
+    defer me.lock.Unlock()
     if me.Verbose {log.Printf("Rmdir: %v\n", name)}
 
     if name == "" {
@@ -98,6 +104,8 @@ func (me *EtcdFs) Rmdir(name string, context *fuse.Context) (code fuse.Status) {
 }
 
 func (me *EtcdFs) Create(name string, flags uint32, mode uint32, context *fuse.Context) (file nodefs.File, code fuse.Status) {
+    me.lock.Lock()
+    defer me.lock.Unlock()
     if me.Verbose {log.Printf("Create: %v, %v, %v\n", name, flags, mode)}
 
     _, err := me.NewEtcdClient().Set(name, "", 0)
@@ -111,6 +119,8 @@ func (me *EtcdFs) Create(name string, flags uint32, mode uint32, context *fuse.C
 }
 
 func (me *EtcdFs) Mkdir(name string, mode uint32, context *fuse.Context) fuse.Status {
+    me.lock.Lock()
+    defer me.lock.Unlock()
     if me.Verbose {log.Printf("Mkdir: %v, %v\n", name, mode)}
 
     if name == "" {
@@ -128,6 +138,8 @@ func (me *EtcdFs) Mkdir(name string, mode uint32, context *fuse.Context) fuse.St
 }
 
 func (me *EtcdFs) GetAttr(name string, context *fuse.Context) (*fuse.Attr, fuse.Status) {
+    me.lock.RLock()
+    defer me.lock.RUnlock()
     if me.Verbose {log.Printf("GetAttr: %v\n", name)}
 
     if name == "" {
@@ -158,6 +170,8 @@ func (me *EtcdFs) GetAttr(name string, context *fuse.Context) (*fuse.Attr, fuse.
 }
 
 func (me *EtcdFs) OpenDir(name string, context *fuse.Context) (c []fuse.DirEntry, code fuse.Status) {
+    me.lock.RLock()
+    defer me.lock.RUnlock()
     if me.Verbose {log.Printf("OpenDir: %v\n", name)}
 
     res, err := me.NewEtcdClient().Get(name, false, false)
@@ -183,6 +197,8 @@ func (me *EtcdFs) OpenDir(name string, context *fuse.Context) (c []fuse.DirEntry
 }
 
 func (me *EtcdFs) Open(name string, flags uint32, context *fuse.Context) (file nodefs.File, code fuse.Status) {
+    me.lock.RLock()
+    defer me.lock.RUnlock()
     if me.Verbose {log.Printf("Open: %v, %v\n", name, flags)}
 
     _, err := me.NewEtcdClient().Get(name, false, false)
@@ -196,6 +212,8 @@ func (me *EtcdFs) Open(name string, flags uint32, context *fuse.Context) (file n
 }
 
 func (me *EtcdFs) Rename(oldName string, newName string, context *fuse.Context) (code fuse.Status) {
+    me.lock.Lock()
+    defer me.lock.Unlock()
     if me.Verbose {log.Printf("Rename: %v -> %v\n", oldName, newName)}
 
     etcdClient := me.NewEtcdClient()
@@ -219,6 +237,8 @@ func (me *EtcdFs) Rename(oldName string, newName string, context *fuse.Context) 
 }
 
 func (me *EtcdFs) Access(name string, mode uint32, context *fuse.Context) (code fuse.Status) {
+    me.lock.RLock()
+    defer me.lock.RUnlock()
     if me.Verbose {log.Printf("Access: %v, %v\n", name, mode)}
 
     etcdClient := me.NewEtcdClient()
@@ -266,6 +286,8 @@ func (me *EtcdFs) Chown(name string, uid uint32, gid uint32, context *fuse.Conte
 }
 
 func (me *EtcdFs) Truncate(name string, size uint64, context *fuse.Context) (code fuse.Status) {
+    me.lock.Lock()
+    defer me.lock.Unlock()
     if me.Verbose {log.Printf("Truncate: %v, %v\n", name, size)}
     etcdClient := me.NewEtcdClient()
 
