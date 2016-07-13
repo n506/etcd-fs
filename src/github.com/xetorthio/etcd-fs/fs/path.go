@@ -65,7 +65,7 @@ func (me *EtcdFs) String() string {
     return "etcd-fs"
 }
 
-func (me *EtcdFs) Unlink(name string, context *fuse.Context) (code fuse.Status) {
+func (me *EtcdFs) Unlink(name string, context *fuse.Context) fuse.Status {
     me.lock.Lock()
     defer me.lock.Unlock()
     if me.Verbose {log.Printf("Unlink: %v\n", name)}
@@ -87,7 +87,7 @@ func (me *EtcdFs) Unlink(name string, context *fuse.Context) (code fuse.Status) 
     return me.logfuse("Unlink", fuse.OK)
 }
 
-func (me *EtcdFs) Rmdir(name string, context *fuse.Context) (code fuse.Status) {
+func (me *EtcdFs) Rmdir(name string, context *fuse.Context) fuse.Status {
     me.lock.Lock()
     defer me.lock.Unlock()
     if me.Verbose {log.Printf("Rmdir: %v\n", name)}
@@ -109,7 +109,7 @@ func (me *EtcdFs) Rmdir(name string, context *fuse.Context) (code fuse.Status) {
     return me.logfuse("Rmdir", fuse.OK)
 }
 
-func (me *EtcdFs) Create(name string, flags uint32, mode uint32, context *fuse.Context) (file nodefs.File, code fuse.Status) {
+func (me *EtcdFs) Create(name string, flags uint32, mode uint32, context *fuse.Context) (nodefs.File, fuse.Status) {
     me.lock.Lock()
     defer me.lock.Unlock()
     if me.Verbose {log.Printf("Create: %v, %v, %v\n", name, flags, mode)}
@@ -175,7 +175,7 @@ func (me *EtcdFs) GetAttr(name string, context *fuse.Context) (*fuse.Attr, fuse.
     return &attr, me.logfuse("GetAttr (" + fmt.Sprintf("%v, %v", attr.Mode, attr.Size) + ")", fuse.OK)
 }
 
-func (me *EtcdFs) OpenDir(name string, context *fuse.Context) (c []fuse.DirEntry, code fuse.Status) {
+func (me *EtcdFs) OpenDir(name string, context *fuse.Context) ([]fuse.DirEntry, fuse.Status) {
     me.lock.RLock()
     defer me.lock.RUnlock()
     if me.Verbose {log.Printf("OpenDir: %v\n", name)}
@@ -205,7 +205,7 @@ func (me *EtcdFs) OpenDir(name string, context *fuse.Context) (c []fuse.DirEntry
     return entries, me.logfuse("OpenDir (" + fmt.Sprintf("%v", entries) + ")", fuse.OK)
 }
 
-func (me *EtcdFs) Open(name string, flags uint32, context *fuse.Context) (file nodefs.File, code fuse.Status) {
+func (me *EtcdFs) Open(name string, flags uint32, context *fuse.Context) (nodefs.File, fuse.Status) {
     me.lock.RLock()
     defer me.lock.RUnlock()
     if me.Verbose {log.Printf("Open: %v, %v\n", name, flags)}
@@ -224,7 +224,7 @@ func (me *EtcdFs) Open(name string, flags uint32, context *fuse.Context) (file n
     return f, me.logfuse("Open (" + fmt.Sprintf("%v", f) + ")", fuse.OK)
 }
 
-func (me *EtcdFs) Rename(oldName string, newName string, context *fuse.Context) (code fuse.Status) {
+func (me *EtcdFs) Rename(oldName string, newName string, context *fuse.Context) fuse.Status {
     me.lock.Lock()
     defer me.lock.Unlock()
     if me.Verbose {log.Printf("Rename: %v -> %v\n", oldName, newName)}
@@ -252,7 +252,7 @@ func (me *EtcdFs) Rename(oldName string, newName string, context *fuse.Context) 
         return me.logfuse("Rename", fuse.OK)
 }
 
-func (me *EtcdFs) Access(name string, mode uint32, context *fuse.Context) (code fuse.Status) {
+func (me *EtcdFs) Access(name string, mode uint32, context *fuse.Context) fuse.Status {
     me.lock.RLock()
     defer me.lock.RUnlock()
     if me.Verbose {log.Printf("Access: %v, %v\n", name, mode)}
@@ -269,12 +269,12 @@ func (me *EtcdFs) Access(name string, mode uint32, context *fuse.Context) (code 
     return me.logfuse("Access", fuse.OK)
 }
 
-func (me *EtcdFs) Link(oldName string, newName string, context *fuse.Context) (code fuse.Status) {
+func (me *EtcdFs) Link(oldName string, newName string, context *fuse.Context) fuse.Status {
     if me.Verbose {log.Printf("Link: %v, %v\n", oldName, newName)}
     return me.logfuse("Link", fuse.ENOSYS)
 }
 
-func (me *EtcdFs) Symlink(name string, linkName string, context *fuse.Context) (fuse.Status) {
+func (me *EtcdFs) Symlink(name string, linkName string, context *fuse.Context) fuse.Status {
     if me.Verbose {log.Printf("Symlink: %v\n", name)}
     return me.logfuse("Link", fuse.ENOSYS)
 }
@@ -289,22 +289,22 @@ func (me *EtcdFs) Mknod(name string, mode uint32, dev uint32, context *fuse.Cont
     return me.logfuse("Mknod", fuse.ENOSYS)
 }
 
-func (me *EtcdFs) Utimens(name string, atime *time.Time, mtime *time.Time, context *fuse.Context) (code fuse.Status) {
+func (me *EtcdFs) Utimens(name string, atime *time.Time, mtime *time.Time, context *fuse.Context) fuse.Status {
     if me.Verbose {log.Printf("Utimens: %v, %v, %v\n", name, atime, mtime)}
     return me.logfuse("Utimens", fuse.OK)
 }
 
-func (me *EtcdFs) Chmod(name string, perms uint32, context *fuse.Context) (code fuse.Status) {
+func (me *EtcdFs) Chmod(name string, perms uint32, context *fuse.Context) fuse.Status {
     if me.Verbose {log.Printf("Chmod: %v, %v\n", name, perms)}
     return me.logfuse("Chmod", fuse.OK)
 }
 
-func (me *EtcdFs) Chown(name string, uid uint32, gid uint32, context *fuse.Context) (code fuse.Status) {
+func (me *EtcdFs) Chown(name string, uid uint32, gid uint32, context *fuse.Context) fuse.Status {
     if me.Verbose {log.Printf("Chown: %v, %v, %v\n", name, uid, gid)}
     return me.logfuse("Chown", fuse.OK)
 }
 
-func (me *EtcdFs) Truncate(name string, size uint64, context *fuse.Context) (code fuse.Status) {
+func (me *EtcdFs) Truncate(name string, size uint64, context *fuse.Context) fuse.Status {
     me.lock.Lock()
     defer me.lock.Unlock()
     if me.Verbose {log.Printf("Truncate: %v, %v\n", name, size)}
@@ -326,10 +326,9 @@ func (me *EtcdFs) Truncate(name string, size uint64, context *fuse.Context) (cod
     return me.logfuse("Truncate", fuse.OK)
 }
 
-func (me *EtcdFs) GetXAttr(name string, attribute string, context *fuse.Context) (data []byte, code fuse.Status) {
+func (me *EtcdFs) GetXAttr(name string, attribute string, context *fuse.Context) ([]byte, fuse.Status) {
     if me.Verbose {log.Printf("GetXAttr: %v, %v\n", name, attribute)}
-    r := []byte{}
-    return r, me.logfuse("GetXAttr", fuse.ENOSYS)
+    return nil, me.logfuse("GetXAttr", fuse.ENOSYS)
 }
 
 func (me *EtcdFs) RemoveXAttr(name string, attr string, context *fuse.Context) fuse.Status {
@@ -344,6 +343,5 @@ func (me *EtcdFs) SetXAttr(name string, attr string,data []byte, flags int, cont
 
 func (me *EtcdFs) ListXAttr(name string, context *fuse.Context) (attrs []string, code fuse.Status) {
     if me.Verbose {log.Printf("ListXAttr: %v\n", name)}
-    r := []string{}
-    return r, me.logfuse("ListXAttr", fuse.ENOSYS)
+    return nil, me.logfuse("ListXAttr", fuse.ENOSYS)
 }

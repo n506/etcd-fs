@@ -121,7 +121,7 @@ func (f *etcdFile) GetAttr(out *fuse.Attr) fuse.Status {
     return f.logfuse("F| GetAttr (" + fmt.Sprintf("%v, %v", out.Mode, out.Size) + ")", fuse.OK)
 }
 
-func (f *etcdFile) Fsync(flags int) (code fuse.Status) {
+func (f *etcdFile) Fsync(flags int) fuse.Status {
     if f.verbose {log.Printf("F| Fsync: %s\n", f.path)}
     return f.logfuse("F| Fsync", fuse.OK)
 }
@@ -158,7 +158,7 @@ func (f *etcdFile) Chmod(perms uint32) fuse.Status {
     return f.logfuse("F| Chmod", fuse.OK)
 }
 
-func (f *etcdFile) Allocate(off uint64, size uint64, mode uint32) (code fuse.Status) {
+func (f *etcdFile) Allocate(off uint64, size uint64, mode uint32) fuse.Status {
     if f.verbose {log.Printf("F| Allocate: %s, %v, %v, %v\n", f.path, off, size, mode)}
 
     return f.logfuse("F| Allocate", fuse.OK)
