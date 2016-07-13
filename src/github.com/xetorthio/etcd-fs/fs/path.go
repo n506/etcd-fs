@@ -231,8 +231,7 @@ func (me *EtcdFs) Truncate(name string, size uint64, context *fuse.Context) (cod
 }
 
 func (me *EtcdFs) GetXAttr(name string, attribute string, context *fuse.Context) (data []byte, code fuse.Status) {
-        r := []byte{}
-        return r, fuse.ENOSYS
+        return nil, fuse.ENOSYS
 }
 
 func (me *EtcdFs) RemoveXAttr(name string, attr string, context *fuse.Context) fuse.Status {
@@ -244,6 +243,5 @@ func (me *EtcdFs) SetXAttr(name string, attr string,data []byte, flags int, cont
 }
 
 func (me *EtcdFs) ListXAttr(name string, context *fuse.Context) (attrs []string, code fuse.Status) {
-        r := []string{}
-        return r, fuse.ENOSYS
+        return nil, fuse.ENOSYS
 }
