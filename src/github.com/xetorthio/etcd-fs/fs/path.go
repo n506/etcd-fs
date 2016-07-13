@@ -24,27 +24,6 @@ type EtcdFs struct {
     lock              sync.RWMutex
 }
 
-var Status map[fuse.Status]string
-
-func init() {
-    Status = make(map[fuse.Status]string)
-    Status[fuse.OK]      = "OK"
-    Status[fuse.EACCES]  = "EACCES"
-    Status[fuse.EBUSY]   = "EBUSY"
-    Status[fuse.EINVAL]  = "EINVAL"
-    Status[fuse.EIO]     = "EIO"
-    Status[fuse.ENOENT]  = "ENOENT"
-    Status[fuse.ENOSYS]  = "ENOSYS"
-    Status[fuse.ENODATA] = "ENODATA"
-    Status[fuse.ENOTDIR] = "ENOTDIR"
-    Status[fuse.EPERM]   = "EPERM"
-    Status[fuse.ERANGE]  = "ERANGE"
-    Status[fuse.EXDEV]   = "EXDEV"
-    Status[fuse.EBADF]   = "EBADF"
-    Status[fuse.ENODEV]  = "ENODEV"
-    Status[fuse.EROFS]   = "EROFS"
-}
-
 func (me *EtcdFs) logfuse(s string, i fuse.Status) fuse.Status {
     if me.Verbose {log.Printf("%s: %v", s, i)}
     return i
