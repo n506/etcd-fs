@@ -16,10 +16,10 @@ import (
 
 type EtcdFs struct {
     pathfs.FileSystem
-    EtcdEndpoint        []string
-    Verbose             bool
-    connlock            sync.Mutex
-    connection          *etcd.Client
+    EtcdEndpoint      []string
+    Verbose           bool
+    connlock          sync.Mutex
+    connection        *etcd.Client
 }
 
 var Status map[fuse.Status]string
@@ -44,7 +44,7 @@ func init() {
 }
 
 func (me *EtcdFs) logfuse(s string, i fuse.Status) fuse.Status {
-    if me.Verbose {log.Printf("%s: %v/%s", s, i, Status[i])}
+    if me.Verbose {log.Printf("%s: %v", s, i)}
     return i
 }
 
@@ -53,7 +53,7 @@ func (me *EtcdFs) NewEtcdClient() *etcd.Client {
     defer me.connlock.Unlock()
 
     if me.connection == nil {
-            if me.Verbose {log.Println("Make new ETCD connection")}
+        if me.Verbose {log.Println("Make new ETCD connection")}
         me.connection = etcd.NewClient(me.EtcdEndpoint)
     }
     return me.connection
@@ -107,7 +107,7 @@ func (me *EtcdFs) Create(name string, flags uint32, mode uint32, context *fuse.C
         return nil, me.logfuse("Create", fuse.ENOENT)
     }
 
-    return NewEtcdFile(me.NewEtcdClient(), name), me.logfuse("Create", fuse.OK)
+    return NewEtcdFile(me.NewEtcdClient(), name, me.Verbose), me.logfuse("Create", fuse.OK)
 }
 
 func (me *EtcdFs) Mkdir(name string, mode uint32, context *fuse.Context) fuse.Status {
@@ -192,7 +192,7 @@ func (me *EtcdFs) Open(name string, flags uint32, context *fuse.Context) (file n
         return nil, me.logfuse("Open", fuse.ENOENT)
     }
 
-    return NewEtcdFile(me.NewEtcdClient(), name), me.logfuse("Open", fuse.OK)
+    return NewEtcdFile(me.NewEtcdClient(), name, me.Verbose), me.logfuse("Open", fuse.OK)
 }
 
 func (me *EtcdFs) Rename(oldName string, newName string, context *fuse.Context) (code fuse.Status) {

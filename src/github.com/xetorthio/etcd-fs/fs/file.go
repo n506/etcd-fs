@@ -4,6 +4,7 @@ import (
     "bytes"
     "log"
     "time"
+    "fmt"
 
     "github.com/coreos/go-etcd/etcd"
     "github.com/hanwen/go-fuse/fuse"
@@ -13,19 +14,31 @@ import (
 type etcdFile struct {
     etcdClient *etcd.Client
     path       string
+    verbose    bool
 }
 
-func NewEtcdFile(client *etcd.Client, path string) nodefs.File {
+func NewEtcdFile(client *etcd.Client, path string, verbose bool) nodefs.File {
     file := new(etcdFile)
     file.etcdClient = client
     file.path = path
+    file.verbose = verbose
+
+    if file.verbose {log.Printf("F| NewEtcdFile: %v\n", path)}
+
     return file
 }
 
-func (f *etcdFile) SetInode(*nodefs.Inode) {
+func (f *etcdFile) logfuse(s string, i fuse.Status) fuse.Status {
+    if f.verbose {log.Printf("F| %s: %v", s, i)}
+    return i
+}
+
+func (f *etcdFile) SetInode(n *nodefs.Inode) {
+    if f.verbose {log.Printf("F| SetInode: %v\n", n)}
 }
 
 func (f *etcdFile) InnerFile() nodefs.File {
+    if f.verbose {log.Println("InnerFile")}
     return nil
 }
 
@@ -34,11 +47,12 @@ func (f *etcdFile) String() string {
 }
 
 func (f *etcdFile) Read(buf []byte, off int64) (fuse.ReadResult, fuse.Status) {
+    if f.verbose {log.Printf("F| Read: %s, %v\n", f.path, off)}
     res, err := f.etcdClient.Get(f.path, false, false)
 
     if err != nil {
         log.Println("Error:", err)
-        return nil, fuse.EIO
+        return nil, f.logfuse("F| Read", fuse.EIO)
     }
 
     end := int(off) + int(len(buf))
@@ -47,15 +61,16 @@ func (f *etcdFile) Read(buf []byte, off int64) (fuse.ReadResult, fuse.Status) {
     }
 
     data := []byte(res.Node.Value)
-    return fuse.ReadResultData(data[off:end]), fuse.OK
+    return fuse.ReadResultData(data[off:end]), f.logfuse("F| Read (" + fmt.Sprintf("%v, %v", off, end) + ")", fuse.OK)
 }
 
 func (f *etcdFile) Write(data []byte, off int64) (uint32, fuse.Status) {
+    if f.verbose {log.Printf("F| Write: %s, %v\n", f.path, off)}
     res, err := f.etcdClient.Get(f.path, false, false)
 
     if err != nil {
         log.Println("Error:", err)
-        return 0, fuse.EIO
+        return 0, f.logfuse("F| Write", fuse.EIO)
     }
 
     originalValue := []byte(res.Node.Value)
@@ -77,62 +92,74 @@ func (f *etcdFile) Write(data []byte, off int64) (uint32, fuse.Status) {
 
     if err != nil {
         log.Println("Error:", err)
-        return 0, fuse.EIO
+        return 0, f.logfuse("F| Write", fuse.EIO)
     }
 
-    return uint32(len(data)), fuse.OK
+    return uint32(len(data)), f.logfuse("F| Write (" + fmt.Sprintf("%v", len(data)) + ")", fuse.OK)
 }
 
 func (f *etcdFile) Flush() fuse.Status {
-    return fuse.OK
+    if f.verbose {log.Printf("F| Flush: %s\n", f.path)}
+    return f.logfuse("F| Flush", fuse.OK)
 }
 
 func (f *etcdFile) Release() {
+    if f.verbose {log.Printf("F| Release: %s\n", f.path)}
 }
 
 func (f *etcdFile) GetAttr(out *fuse.Attr) fuse.Status {
+    if f.verbose {log.Printf("F| GetAttr: %s\n", f.path)}
     res, err := f.etcdClient.Get(f.path, false, false)
 
     if err != nil {
         log.Println("Error:", err)
-        return fuse.EIO
+        return f.logfuse("F| GetAttr", fuse.EIO)
     }
 
     out.Mode = fuse.S_IFREG | 0666
     out.Size = uint64(len(res.Node.Value))
-    return fuse.OK
+    return f.logfuse("F| GetAttr (" + fmt.Sprintf("%v, %v", out.Mode, out.Size) + ")", fuse.OK)
 }
 
 func (f *etcdFile) Fsync(flags int) (code fuse.Status) {
-    return fuse.OK
+    if f.verbose {log.Printf("F| Fsync: %s\n", f.path)}
+    return f.logfuse("F| Fsync", fuse.OK)
 }
 
 func (f *etcdFile) Utimens(atime *time.Time, mtime *time.Time) fuse.Status {
-    return fuse.OK
+    if f.verbose {log.Printf("F| Utimens: %s\n", f.path)}
+    return f.logfuse("F| Utimens", fuse.OK)
 }
 
 func (f *etcdFile) Truncate(size uint64) fuse.Status {
-        res, err := f.etcdClient.Get(f.path, false, false)
+    if f.verbose {log.Printf("F| Truncate: %s, %v\n", f.path, size)}
 
-        if err != nil {
-            log.Println(err)
-            return fuse.EIO
-        }
-        if _, err := f.etcdClient.Set(res.Node.Value, "", 0); err != nil {
-            log.Println(err)
-            return fuse.EIO
-        }
-        return fuse.OK
+    res, err := f.etcdClient.Get(f.path, false, false)
+    if err != nil {
+        log.Println(err)
+        return f.logfuse("F| Truncate", fuse.EIO)
+    }
+    if _, err := f.etcdClient.Set(res.Node.Value, "", 0); err != nil {
+        log.Println(err)
+        return f.logfuse("F| Truncate", fuse.EIO)
+    }
+    return f.logfuse("F| Truncate", fuse.OK)
 }
 
 func (f *etcdFile) Chown(uid uint32, gid uint32) fuse.Status {
-    return fuse.OK
+    if f.verbose {log.Printf("F| Chown: %s, %v, %v\n", f.path, uid, gid)}
+
+    return f.logfuse("F| Chown", fuse.OK)
 }
 
 func (f *etcdFile) Chmod(perms uint32) fuse.Status {
-    return fuse.OK
+    if f.verbose {log.Printf("F| Chmod: %s, %v\n", f.path, perms)}
+
+    return f.logfuse("F| Chmod", fuse.OK)
 }
 
 func (f *etcdFile) Allocate(off uint64, size uint64, mode uint32) (code fuse.Status) {
-    return fuse.OK
+    if f.verbose {log.Printf("F| Allocate: %s, %v, %v, %v\n", f.path, off, size, mode)}
+
+    return f.logfuse("F| Allocate", fuse.OK)
 }
