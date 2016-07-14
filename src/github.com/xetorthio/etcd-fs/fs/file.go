@@ -14,13 +14,15 @@ import (
 type etcdFile struct {
     etcdClient *etcd.Client
     path       string
+    root       string
     verbose    bool
 }
 
-func NewEtcdFile(client *etcd.Client, path string, verbose bool) nodefs.File {
+func NewEtcdFile(client *etcd.Client, path string, root string, verbose bool) nodefs.File {
     file := new(etcdFile)
     file.etcdClient = client
     file.path = path
+    file.root = root
     file.verbose = verbose
 
     if file.verbose {log.Printf("F| NewEtcdFile: %v\n", path)}
@@ -48,7 +50,7 @@ func (f *etcdFile) String() string {
 
 func (f *etcdFile) Read(buf []byte, off int64) (fuse.ReadResult, fuse.Status) {
     if f.verbose {log.Printf("F| Read: %s, %v\n", f.path, off)}
-    res, err := f.etcdClient.Get(f.path, false, false)
+    res, err := f.etcdClient.Get(f.root + "/" + f.path, false, false)
 
     if err != nil {
         log.Println("Error:", err)
@@ -66,7 +68,7 @@ func (f *etcdFile) Read(buf []byte, off int64) (fuse.ReadResult, fuse.Status) {
 
 func (f *etcdFile) Write(data []byte, off int64) (uint32, fuse.Status) {
     if f.verbose {log.Printf("F| Write: %s, %v\n", f.path, off)}
-    res, err := f.etcdClient.Get(f.path, false, false)
+    res, err := f.etcdClient.Get(f.root + "/" + f.path, false, false)
 
     if err != nil {
         log.Println("Error:", err)
@@ -88,7 +90,7 @@ func (f *etcdFile) Write(data []byte, off int64) (uint32, fuse.Status) {
     newValue.Grow(len(data) + len(rightChunk))
     newValue.Write(data)
     newValue.Write(rightChunk)
-    _, err = f.etcdClient.Set(f.path, newValue.String(), 0)
+    _, err = f.etcdClient.Set(f.root + "/" + f.path, newValue.String(), 0)
 
     if err != nil {
         log.Println("Error:", err)
@@ -109,7 +111,7 @@ func (f *etcdFile) Release() {
 
 func (f *etcdFile) GetAttr(out *fuse.Attr) fuse.Status {
     if f.verbose {log.Printf("F| GetAttr: %s\n", f.path)}
-    res, err := f.etcdClient.Get(f.path, false, false)
+    res, err := f.etcdClient.Get(f.root + "/" + f.path, false, false)
 
     if err != nil {
         log.Println("Error:", err)
@@ -134,7 +136,7 @@ func (f *etcdFile) Utimens(atime *time.Time, mtime *time.Time) fuse.Status {
 func (f *etcdFile) Truncate(size uint64) fuse.Status {
     if f.verbose {log.Printf("F| Truncate: %s, %v\n", f.path, size)}
 
-    res, err := f.etcdClient.Get(f.path, false, false)
+    res, err := f.etcdClient.Get(f.root + "/" + f.path, false, false)
     if err != nil {
         log.Println(err)
         return f.logfuse("F| Truncate", fuse.ENOENT)

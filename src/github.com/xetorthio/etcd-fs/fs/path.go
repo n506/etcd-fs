@@ -19,6 +19,7 @@ type EtcdFs struct {
     pathfs.FileSystem
     EtcdEndpoint      []string
     Verbose           bool
+    Root              string
     connlock          sync.Mutex
     connection        *etcd.Client
     lock              sync.RWMutex
@@ -53,7 +54,7 @@ func (me *EtcdFs) Unlink(name string, context *fuse.Context) fuse.Status {
         return me.logfuse("Unlink", fuse.OK)
     }
 
-    _, err := me.NewEtcdClient().Delete(name, false)
+    _, err := me.NewEtcdClient().Delete(me.Root + "/" + name, false)
 
     if err != nil {
         log.Println(err)
@@ -72,7 +73,7 @@ func (me *EtcdFs) Rmdir(name string, context *fuse.Context) fuse.Status {
         return me.logfuse("Rmdir", fuse.EROFS)
     }
 
-    _, err := me.NewEtcdClient().RawDelete(name, true, true)
+    _, err := me.NewEtcdClient().RawDelete(me.Root + "/" + name, true, true)
 
     if err != nil {
         log.Println(err)
@@ -90,13 +91,13 @@ func (me *EtcdFs) Create(name string, flags uint32, mode uint32, context *fuse.C
         return nil, me.logfuse("Create", fuse.EROFS)
     }
 
-    _, err := me.NewEtcdClient().Set(name, "", 0)
+    _, err := me.NewEtcdClient().Set(me.Root + "/" + name, "", 0)
 
     if err != nil {
         log.Println("Create Error:", err)
         return nil, me.logfuse("Create", fuse.ENOENT)
     }
-    f := NewEtcdFile(me.NewEtcdClient(), name, me.Verbose)
+    f := NewEtcdFile(me.NewEtcdClient(), name, me.Root, me.Verbose)
     return f, me.logfuse("Create (" + fmt.Sprintf("%v", f) + ")", fuse.OK)
 }
 
@@ -108,7 +109,7 @@ func (me *EtcdFs) Mkdir(name string, mode uint32, context *fuse.Context) fuse.St
         return me.logfuse("MkDir", fuse.EROFS)
     }
 
-    _, err := me.NewEtcdClient().CreateDir(name, 0)
+    _, err := me.NewEtcdClient().CreateDir(me.Root + "/" + name, 0)
 
     if err != nil {
         log.Println(err)
@@ -127,7 +128,7 @@ func (me *EtcdFs) GetAttr(name string, context *fuse.Context) (*fuse.Attr, fuse.
         return &a, me.logfuse("GetAttr (" + fmt.Sprintf("%v, %v", a.Mode, a.Size) + ")", fuse.OK)
     }
 
-    res, err := me.NewEtcdClient().Get(name, false, false)
+    res, err := me.NewEtcdClient().Get(me.Root + "/" + name, false, false)
 
     if err != nil {
         return nil, me.logfuse("GetAttr", fuse.ENOENT)
@@ -153,7 +154,7 @@ func (me *EtcdFs) OpenDir(name string, context *fuse.Context) ([]fuse.DirEntry, 
     defer me.lock.RUnlock()
     if me.Verbose {log.Printf("OpenDir: %v\n", name)}
 
-    res, err := me.NewEtcdClient().Get(name, false, false)
+    res, err := me.NewEtcdClient().Get(me.Root + "/" + name, false, false)
 
     if err != nil {
         log.Println("OpenDir Error:", err)
@@ -180,14 +181,14 @@ func (me *EtcdFs) Open(name string, flags uint32, context *fuse.Context) (nodefs
     defer me.lock.RUnlock()
     if me.Verbose {log.Printf("Open: %v, %v\n", name, flags)}
 
-    _, err := me.NewEtcdClient().Get(name, false, false)
+    _, err := me.NewEtcdClient().Get(me.Root + "/" + name, false, false)
 
     if err != nil {
         log.Println("Open Error:", err)
         return nil, me.logfuse("Open", fuse.ENOENT)
     }
 
-    f := NewEtcdFile(me.NewEtcdClient(), name, me.Verbose)
+    f := NewEtcdFile(me.NewEtcdClient(), name, me.Root, me.Verbose)
     return f, me.logfuse("Open (" + fmt.Sprintf("%v", f) + ")", fuse.OK)
 }
 
@@ -200,20 +201,20 @@ func (me *EtcdFs) Rename(oldName string, newName string, context *fuse.Context) 
     }
 
     etcdClient := me.NewEtcdClient()
-    res, err := etcdClient.Get(oldName, false, false)
+    res, err := etcdClient.Get(me.Root + "/" + oldName, false, false)
     if err != nil {
         log.Println(err)
         return me.logfuse("Rename", fuse.ENOENT)
     }
     originalValue := []byte(res.Node.Value)
     newValue := bytes.NewBuffer(originalValue)
-    if _, err :=etcdClient.Set(newName, newValue.String(), 0); err != nil {
+    if _, err :=etcdClient.Set(me.Root + "/" + newName, newValue.String(), 0); err != nil {
         log.Println(err)
         return me.logfuse("Rename", fuse.ENOENT)
     }
-    if _, err := etcdClient.Delete(oldName, false); err != nil {
+    if _, err := etcdClient.Delete(me.Root + "/" + oldName, false); err != nil {
         log.Println(err)
-        etcdClient.Delete(newName, false)
+        etcdClient.Delete(me.Root + "/" + newName, false)
         return me.logfuse("Rename", fuse.ENOENT)
     }
         return me.logfuse("Rename", fuse.OK)
@@ -228,7 +229,7 @@ func (me *EtcdFs) Access(name string, mode uint32, context *fuse.Context) fuse.S
     }
 
     etcdClient := me.NewEtcdClient()
-    _, err := etcdClient.Get(name, false, false)
+    _, err := etcdClient.Get(me.Root + "/" + name, false, false)
     if err != nil {
         log.Println(err)
         return me.logfuse("Access", fuse.ENOENT)
@@ -281,12 +282,12 @@ func (me *EtcdFs) Truncate(name string, size uint64, context *fuse.Context) fuse
 
     etcdClient := me.NewEtcdClient()
 
-    _, err := etcdClient.Get(name, false, false)
+    _, err := etcdClient.Get(me.Root + "/" + name, false, false)
     if err != nil {
         log.Println(err)
         return me.logfuse("Truncate", fuse.ENOENT)
     }
-    if _, err := etcdClient.Set(name, "", 0); err != nil {
+    if _, err := etcdClient.Set(me.Root + "/" + name, "", 0); err != nil {
         log.Println(err)
         return me.logfuse("Truncate", fuse.EROFS)
     }

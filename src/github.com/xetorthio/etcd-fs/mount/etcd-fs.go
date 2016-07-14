@@ -17,6 +17,7 @@ type ConfigT struct {
     Verbose bool `short:"v" long:"verbose" description:"verbose debug output" env:"ETCD_FS_VERBOSE"`
     End string `short:"e" long:"endpoint" description:"ETCD endpoints, comma separated" default:"http://localhost:2379" env:"ETCD_FS_ENDPOINT"`
     Mount string `short:"m" long:"mount" description:"mountpoint for fs, must be created.  REQUIRED" required:"true" env:"ETCD_FS_MOUNT"`
+    Root string `short:"r" long:"root" description:"etcd root node" env:"ETCD_FS_ROOT" default:"/"`
     Help bool `short:"h" long:"help" description:"Show this help message"`
 }
 
@@ -67,14 +68,36 @@ func main() {
 
     log.Printf("ETCD endpoints: %v\n", endpoints)
     log.Printf("Mountpoint: %v\n", Config.Mount)
+    log.Printf("ETCD root: %v\n", Config.Root)
     log.Printf("Verbose output: %v\n", Config.Verbose)
 
+    if Config.Root == "/" {
+        Config.Root = ""
+    }
 
     etcdFs := etcdfs.EtcdFs{
         FileSystem:   pathfs.NewDefaultFileSystem(),
         EtcdEndpoint: endpoints,
         Verbose: Config.Verbose,
+        Root: Config.Root,
     }
+
+    if Config.Root != "" {
+        if cli := etcdFs.NewEtcdClient(); cli == nil {
+            log.Fatalf("etcd connection failed")
+            os.Exit(1)
+        } else {
+            if _, err := cli.UpdateDir(Config.Root, 0); err!=nil {
+                if _, err = cli.CreateDir(Config.Root, 0); err!=nil {
+                    log.Fatalf("Failed to create etcd root node (%v), %v", Config.Root, err)
+                    os.Exit(1)
+                } else {
+                    log.Printf("ETCD root node created (%v)\n", Config.Root)
+                }
+            }
+        }
+    }
+
     nfs := pathfs.NewPathNodeFs(&etcdFs, nil)
     server, _, err := nodefs.MountRoot(Config.Mount, nfs.Root(), nil)
     if err != nil {
