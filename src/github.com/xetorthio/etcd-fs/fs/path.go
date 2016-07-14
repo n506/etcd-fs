@@ -282,12 +282,25 @@ func (me *EtcdFs) Truncate(name string, size uint64, context *fuse.Context) fuse
 
     etcdClient := me.NewEtcdClient()
 
-    _, err := etcdClient.Get(me.Root + "/" + name, false, false)
+    res, err := etcdClient.Get(me.Root + "/" + name, false, false)
     if err != nil {
         log.Println(err)
         return me.logfuse("Truncate", fuse.ENOENT)
     }
-    if _, err := etcdClient.Set(me.Root + "/" + name, "", 0); err != nil {
+
+    newValue := ""
+
+    if size != 0 {
+        originalValue := []byte(res.Node.Value)
+        s := size
+        if size > uint64(len(res.Node.Value)) {
+            s = uint64(len(res.Node.Value))
+        }
+        n := bytes.NewBuffer(originalValue[:s])
+        newValue = n.String()
+    }
+
+    if _, err := etcdClient.Set(me.Root + "/" + name, newValue, 0); err != nil {
         log.Println(err)
         return me.logfuse("Truncate", fuse.EROFS)
     }

@@ -31,7 +31,7 @@ func NewEtcdFile(client *etcd.Client, path string, root string, verbose bool) no
 }
 
 func (f *etcdFile) logfuse(s string, i fuse.Status) fuse.Status {
-    if f.verbose {log.Printf("F| %s: %v", s, i)}
+    if f.verbose {log.Printf("%s: %v", s, i)}
     return i
 }
 
@@ -141,7 +141,20 @@ func (f *etcdFile) Truncate(size uint64) fuse.Status {
         log.Println(err)
         return f.logfuse("F| Truncate", fuse.ENOENT)
     }
-    if _, err := f.etcdClient.Set(res.Node.Value, "", 0); err != nil {
+
+    newValue := ""
+
+    if size != 0 {
+        originalValue := []byte(res.Node.Value)
+        s := size
+        if size > uint64(len(res.Node.Value)) {
+            s = uint64(len(res.Node.Value))
+        }
+        n := bytes.NewBuffer(originalValue[:s])
+        newValue = n.String()
+    }
+
+    if _, err := f.etcdClient.Set(f.root + "/" + f.path, newValue, 0); err != nil {
         log.Println(err)
         return f.logfuse("F| Truncate", fuse.EROFS)
     }
