@@ -52,7 +52,7 @@ func (f *etcdFile) Read(buf []byte, off int64) (fuse.ReadResult, fuse.Status) {
 
     if err != nil {
         log.Println("Error:", err)
-        return nil, f.logfuse("F| Read", fuse.EIO)
+        return nil, f.logfuse("F| Read", fuse.ENOENT)
     }
 
     end := int(off) + int(len(buf))
@@ -70,7 +70,7 @@ func (f *etcdFile) Write(data []byte, off int64) (uint32, fuse.Status) {
 
     if err != nil {
         log.Println("Error:", err)
-        return 0, f.logfuse("F| Write", fuse.EIO)
+        return 0, f.logfuse("F| Write", fuse.ENOENT)
     }
 
     originalValue := []byte(res.Node.Value)
@@ -92,7 +92,7 @@ func (f *etcdFile) Write(data []byte, off int64) (uint32, fuse.Status) {
 
     if err != nil {
         log.Println("Error:", err)
-        return 0, f.logfuse("F| Write", fuse.EIO)
+        return 0, f.logfuse("F| Write", fuse.EROFS)
     }
 
     return uint32(len(data)), f.logfuse("F| Write (" + fmt.Sprintf("%v", len(data)) + ")", fuse.OK)
@@ -113,7 +113,7 @@ func (f *etcdFile) GetAttr(out *fuse.Attr) fuse.Status {
 
     if err != nil {
         log.Println("Error:", err)
-        return f.logfuse("F| GetAttr", fuse.EIO)
+        return f.logfuse("F| GetAttr", fuse.ENOENT)
     }
 
     out.Mode = fuse.S_IFREG | 0666
@@ -137,11 +137,11 @@ func (f *etcdFile) Truncate(size uint64) fuse.Status {
     res, err := f.etcdClient.Get(f.path, false, false)
     if err != nil {
         log.Println(err)
-        return f.logfuse("F| Truncate", fuse.EIO)
+        return f.logfuse("F| Truncate", fuse.ENOENT)
     }
     if _, err := f.etcdClient.Set(res.Node.Value, "", 0); err != nil {
         log.Println(err)
-        return f.logfuse("F| Truncate", fuse.EIO)
+        return f.logfuse("F| Truncate", fuse.EROFS)
     }
     return f.logfuse("F| Truncate", fuse.OK)
 }
