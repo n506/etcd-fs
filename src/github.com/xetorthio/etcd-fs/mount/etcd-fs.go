@@ -6,6 +6,8 @@ import (
     "strings"
     "bytes"
     "fmt"
+    "os/signal"
+    "syscall"
 
     "github.com/hanwen/go-fuse/fuse/nodefs"
     "github.com/hanwen/go-fuse/fuse/pathfs"
@@ -143,6 +145,22 @@ func main() {
     } else {
         log.Println("etcd-fs started")
         defer log.Println("etcd-fs stopped")
-        server.Serve()
+
+        csignal := make(chan os.Signal, 1)
+        cfinal := make(chan bool, 1)
+        signal.Notify(csignal, syscall.SIGINT, syscall.SIGTERM)
+        go func() {
+            s := <- csignal
+            log.Printf("Received %v", s)
+            cfinal <- true
+        }()
+
+        go func() {
+            server.Serve()
+            cfinal <- true
+        }()
+
+        <-cfinal
+        server.Unmount()
     }
 }
