@@ -15,6 +15,7 @@ import (
 
 type ConfigT struct {
     Verbose bool `short:"v" long:"verbose" description:"verbose debug output" env:"ETCD_FS_VERBOSE"`
+    Debug bool `short:"d" long:"debug" description:"more debug output" env:"ETCD_FS_DEBUG"`
     End string `short:"e" long:"endpoint" description:"ETCD endpoints, comma separated" default:"http://localhost:2379" env:"ETCD_FS_ENDPOINT"`
     Mount string `short:"m" long:"mount" description:"mountpoint for fs, must be created.  REQUIRED" required:"true" env:"ETCD_FS_MOUNT"`
     Root string `short:"r" long:"root" description:"etcd root node" env:"ETCD_FS_ROOT" default:"/"`
@@ -69,7 +70,17 @@ func main() {
     log.Printf("ETCD endpoints: %v\n", endpoints)
     log.Printf("Mountpoint: %v\n", Config.Mount)
     log.Printf("ETCD root: %v\n", Config.Root)
-    log.Printf("Verbose output: %v\n", Config.Verbose)
+
+    vtype := "Normal"
+    if !Config.Debug {
+        if Config.Verbose {
+            vtype = "Verbose"
+        }
+    } else {
+        vtype = "Debug"
+        Config.Verbose = true
+    }
+    log.Printf("Verbose output: %v\n", vtype)
 
     if Config.Root == "/" {
         Config.Root = ""
@@ -98,8 +109,16 @@ func main() {
         }
     }
 
-    nfs := pathfs.NewPathNodeFs(&etcdFs, nil)
-    server, _, err := nodefs.MountRoot(Config.Mount, nfs.Root(), nil)
+    var optsp *pathfs.PathNodeFsOptions = nil;
+    var optsn *nodefs.Options = nil;
+
+    if Config.Debug {
+        optsp = &pathfs.PathNodeFsOptions{Debug:true}
+        optsn = &nodefs.Options{Debug:true}
+    }
+    nfs := pathfs.NewPathNodeFs(&etcdFs, optsp)
+    server, _, err := nodefs.MountRoot(Config.Mount, nfs.Root(), optsn)
+
     if err != nil {
         log.Fatalf("Mount fail: %v", err)
     } else {
