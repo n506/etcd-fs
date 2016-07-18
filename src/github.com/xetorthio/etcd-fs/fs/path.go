@@ -21,6 +21,7 @@ type EtcdFs struct {
     Verbose           bool
     Root              string
     Cons              string
+    Whole             bool
     connlock          sync.Mutex
     connection        *etcd.Client
     lock              sync.RWMutex
@@ -39,6 +40,11 @@ func (me *EtcdFs) NewEtcdClient() *etcd.Client {
         if me.Verbose {log.Println("Make new ETCD connection")}
         me.connection = etcd.NewClient(me.EtcdEndpoint)
         me.connection.SetConsistency(me.Cons)
+        if me.Whole {
+            me.connection.SyncCluster()
+        }
+        log.Printf("Cluster: %v", me.connection.GetCluster());
+
     }
     return me.connection
 }

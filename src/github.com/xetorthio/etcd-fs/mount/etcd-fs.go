@@ -22,6 +22,7 @@ type ConfigT struct {
     End string `short:"e" long:"endpoint" description:"ETCD endpoints, comma separated" default:"http://localhost:2379" env:"ETCD_FS_ENDPOINT"`
     Mount string `short:"m" long:"mount" description:"mountpoint for fs, must be created.  REQUIRED" required:"true" env:"ETCD_FS_MOUNT"`
     Root string `short:"r" long:"root" description:"etcd root node" env:"ETCD_FS_ROOT" default:"/"`
+    Whole bool `short:"w" long:"whole" description:"use whole cluster, otherwise bind etcd-fs only to listed endpoints" env:"ETCD_FS_BIND"`
     Cons string `short:"c" long:"consistency" description:"Sets connection consistency, allow GET requests to any node (strong, weak)" default:"strong" env:"ETCD_FS_CONSISTENCY"`
     Help bool `short:"h" long:"help" description:"Show this help message"`
 }
@@ -112,6 +113,7 @@ func main() {
     log.Printf("ETCD endpoints: %v\n", endpoints)
     log.Printf("Mountpoint: %v\n", Config.Mount)
     log.Printf("ETCD root: %v\n", Config.Root)
+    log.Printf("Whole cluster: %v\n", Config.Whole)
     log.Printf("Consistency: %v\n", Config.Cons)
     log.Printf("Log level: %v\n", vtype)
 
@@ -128,6 +130,7 @@ func main() {
         Verbose: verbose,
         Root: Config.Root,
         Cons: cons,
+        Whole: Config.Whole,
     }
 
     if Config.Root != "" {
