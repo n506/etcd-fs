@@ -110,11 +110,11 @@ func main() {
     }
 
     var optsp *pathfs.PathNodeFsOptions = nil;
-    var optsn *nodefs.Options = nil;
+    var optsn *nodefs.Options = nodefs.NewOptions();
 
     if Config.Debug {
         optsp = &pathfs.PathNodeFsOptions{Debug:true}
-        optsn = &nodefs.Options{Debug:true}
+        optsn.Debug = true
     }
     nfs := pathfs.NewPathNodeFs(&etcdFs, optsp)
     server, _, err := nodefs.MountRoot(Config.Mount, nfs.Root(), optsn)
