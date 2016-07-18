@@ -12,7 +12,8 @@ import (
     "github.com/hanwen/go-fuse/fuse/nodefs"
     "github.com/hanwen/go-fuse/fuse/pathfs"
     "github.com/hanwen/go-fuse/fuse"
-    etcdfs "github.com/xetorthio/etcd-fs/fs"
+    "github.com/xetorthio/etcd-fs/fs"
+    "github.com/coreos/go-etcd/etcd"
     "github.com/jessevdk/go-flags"
 )
 
@@ -21,6 +22,7 @@ type ConfigT struct {
     End string `short:"e" long:"endpoint" description:"ETCD endpoints, comma separated" default:"http://localhost:2379" env:"ETCD_FS_ENDPOINT"`
     Mount string `short:"m" long:"mount" description:"mountpoint for fs, must be created.  REQUIRED" required:"true" env:"ETCD_FS_MOUNT"`
     Root string `short:"r" long:"root" description:"etcd root node" env:"ETCD_FS_ROOT" default:"/"`
+    Cons string `short:"c" long:"consistency" description:"Sets connection consistency, allow GET requests to any node (strong, weak)" default:"strong" env:"ETCD_FS_CONSISTENCY"`
     Help bool `short:"h" long:"help" description:"Show this help message"`
 }
 
@@ -95,9 +97,22 @@ func main() {
             os.Exit(1)
     }
 
+    var cons string
+    switch Config.Cons {
+        case "weak" : cons = etcd.WEAK_CONSISTENCY
+        case "strong" : cons = etcd.STRONG_CONSISTENCY
+        default:
+            fmt.Fprint(os.Stderr, "Consistency must be one of: strong, weak\n")
+            var b bytes.Buffer
+            parser.WriteHelp(&b)
+            fmt.Fprintf(os.Stderr, "%s", &b)
+            os.Exit(1)
+    }
+
     log.Printf("ETCD endpoints: %v\n", endpoints)
     log.Printf("Mountpoint: %v\n", Config.Mount)
     log.Printf("ETCD root: %v\n", Config.Root)
+    log.Printf("Consistency: %v\n", Config.Cons)
     log.Printf("Log level: %v\n", vtype)
 
     verbose := Config.Log != "info"
@@ -112,6 +127,7 @@ func main() {
         EtcdEndpoint: endpoints,
         Verbose: verbose,
         Root: Config.Root,
+        Cons: cons,
     }
 
     if Config.Root != "" {

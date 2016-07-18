@@ -20,6 +20,7 @@ type EtcdFs struct {
     EtcdEndpoint      []string
     Verbose           bool
     Root              string
+    Cons              string
     connlock          sync.Mutex
     connection        *etcd.Client
     lock              sync.RWMutex
@@ -37,6 +38,7 @@ func (me *EtcdFs) NewEtcdClient() *etcd.Client {
     if me.connection == nil {
         if me.Verbose {log.Println("Make new ETCD connection")}
         me.connection = etcd.NewClient(me.EtcdEndpoint)
+        me.connection.SetConsistency(me.Cons)
     }
     return me.connection
 }
