@@ -9,6 +9,7 @@ import (
 
     "github.com/hanwen/go-fuse/fuse/nodefs"
     "github.com/hanwen/go-fuse/fuse/pathfs"
+    "github.com/hanwen/go-fuse/fuse"
     etcdfs "github.com/xetorthio/etcd-fs/fs"
     "github.com/jessevdk/go-flags"
 )
@@ -22,6 +23,20 @@ type ConfigT struct {
 }
 
 var Config ConfigT
+
+func MountRoot(mountpoint string, root nodefs.Node, opts *nodefs.Options, end []string) (*fuse.Server, *nodefs.FileSystemConnector, error) {
+        conn := nodefs.NewFileSystemConnector(root, opts)
+
+        mountOpts := fuse.MountOptions{FsName: fmt.Sprintf("%v", end), Name: "etcdfs"}
+        if opts != nil && opts.Debug {
+                mountOpts.Debug = opts.Debug
+        }
+        s, err := fuse.NewServer(conn.RawFS(), mountpoint, &mountOpts)
+        if err != nil {
+                return nil, nil, err
+        }
+        return s, conn, nil
+}
 
 func main() {
 
@@ -121,7 +136,7 @@ func main() {
         optsn.Debug = true
     }
     nfs := pathfs.NewPathNodeFs(&etcdFs, optsp)
-    server, _, err := nodefs.MountRoot(Config.Mount, nfs.Root(), optsn)
+    server, _, err := MountRoot(Config.Mount, nfs.Root(), optsn, endpoints)
 
     if err != nil {
         log.Fatalf("Mount fail: %v", err)
