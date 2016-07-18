@@ -14,8 +14,7 @@ import (
 )
 
 type ConfigT struct {
-    Verbose bool `short:"v" long:"verbose" description:"verbose debug output" env:"ETCD_FS_VERBOSE"`
-    Debug bool `short:"d" long:"debug" description:"more debug output" env:"ETCD_FS_DEBUG"`
+    Log string `short:"l" long:"loglevel" description:"log level (info, verbose, debug)" default:"info" env:"ETCD_FS_LOGLEVEL"`
     End string `short:"e" long:"endpoint" description:"ETCD endpoints, comma separated" default:"http://localhost:2379" env:"ETCD_FS_ENDPOINT"`
     Mount string `short:"m" long:"mount" description:"mountpoint for fs, must be created.  REQUIRED" required:"true" env:"ETCD_FS_MOUNT"`
     Root string `short:"r" long:"root" description:"etcd root node" env:"ETCD_FS_ROOT" default:"/"`
@@ -67,20 +66,25 @@ func main() {
         os.Exit(1)
     }
 
+    var vtype string
+
+    switch Config.Log {
+        case "info", "verbose" , "debug": vtype = Config.Log
+        default:
+            fmt.Fprint(os.Stderr, "Log level mus be one of: info, verbose, debug\n")
+            var b bytes.Buffer
+            parser.WriteHelp(&b)
+            fmt.Fprintf(os.Stderr, "%s", &b)
+            os.Exit(1)
+    }
+
     log.Printf("ETCD endpoints: %v\n", endpoints)
     log.Printf("Mountpoint: %v\n", Config.Mount)
     log.Printf("ETCD root: %v\n", Config.Root)
+    log.Printf("Log level: %v\n", vtype)
 
-    vtype := "Normal"
-    if !Config.Debug {
-        if Config.Verbose {
-            vtype = "Verbose"
-        }
-    } else {
-        vtype = "Debug"
-        Config.Verbose = true
-    }
-    log.Printf("Verbose output: %v\n", vtype)
+    verbose := Config.Log != "info"
+    debug := Config.Log == "debug"
 
     if Config.Root == "/" {
         Config.Root = ""
@@ -89,7 +93,7 @@ func main() {
     etcdFs := etcdfs.EtcdFs{
         FileSystem:   pathfs.NewDefaultFileSystem(),
         EtcdEndpoint: endpoints,
-        Verbose: Config.Verbose,
+        Verbose: verbose,
         Root: Config.Root,
     }
 
@@ -112,7 +116,7 @@ func main() {
     var optsp *pathfs.PathNodeFsOptions = nil;
     var optsn *nodefs.Options = nodefs.NewOptions();
 
-    if Config.Debug {
+    if debug {
         optsp = &pathfs.PathNodeFsOptions{Debug:true}
         optsn.Debug = true
     }
